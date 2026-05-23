@@ -30,14 +30,24 @@
     }
   },
   "forms": {
+    "nonAlphaNumericToUnderscore": {
+      "identifier": "replace",
+      "pattern": "[^A-Za-z0-9]+",
+      "replacement": "_"
+    },
+    "acronymBoundary": {
+      "identifier": "replace",
+      "pattern": "([A-Z]+)([A-Z][a-z])",
+      "replacement": "$1_$2"
+    },
     "splitBeforeCapitals": {
       "identifier": "replace",
       "pattern": "([a-z0-9])([A-Z])",
       "replacement": "$1_$2"
     },
-    "nonAlphaNumericToUnderscore": {
+    "repeatedUnderscore": {
       "identifier": "replace",
-      "pattern": "[^A-Za-z0-9]+",
+      "pattern": "_+",
       "replacement": "_"
     },
     "trimUnderscores": {
@@ -51,8 +61,10 @@
     "constantCase": {
       "identifier": "chain",
       "steps": [
-        "splitBeforeCapitals",
         "nonAlphaNumericToUnderscore",
+        "acronymBoundary",
+        "splitBeforeCapitals",
+        "repeatedUnderscore",
         "trimUnderscores",
         "upperInvariant"
       ]
