@@ -66,7 +66,7 @@ Copy-Item .\local.props.template .\local.props
 
 > ⚠️ **重要：发布前请校对 manifest 与 csproj 版本对齐**
 >
-> `RitsuLibModTemplate.json` 中 `dependencies[STS2-RitsuLib].version` **必须**与 `.csproj` 里 `STS2.RitsuLib` 包实际编译使用的版本一致。两者互相独立、**不会自动同步**——不对齐会让玩家通过 manifest 校验后在运行时崩溃，或在 RitsuLib 已满足条件时被错误拒绝。详细步骤见下方 [发布前 checklist：版本对齐](#发布前-checklist版本对齐)。
+> `RitsuLibModTemplate.json` 中 `dependencies[STS2-RitsuLib].version` **必须**与 `.csproj` 里 `STS2.RitsuLib` 包实际编译使用的版本一致。模板构建时会自动同步该依赖版本；`min_game_version` 和有意声明较低运行时下限的场景仍需人工确认。详细步骤见下方 [发布前 checklist：版本对齐](#发布前-checklist版本对齐)。
 
 ### 当前版本快照（截至 2026-05-22）
 
@@ -93,7 +93,7 @@ Copy-Item .\local.props.template .\local.props
 模板默认引用主线 `STS2.RitsuLib`，跟踪 NuGet 最新版本：
 
 ```xml
-<PackageReference Include="STS2.RitsuLib" Version="*" />
+<PackageReference Include="STS2.RitsuLib" Version="*" GeneratePathProperty="true" />
 ```
 
 **三个 RitsuLib 包一次只能启用一个。** 仍针对老分支的代码，注释主线包并启用对应兼容包：
@@ -112,16 +112,15 @@ Copy-Item .\local.props.template .\local.props
 
 ### 发布前 checklist：版本对齐
 
-> **`.csproj` 里的 `PackageReference` 只控制编译时拉取；`RitsuLibModTemplate.json` 的 `dependencies` 是游戏加载器在运行时校验的。两者互相独立，不会自动同步。**
+> **`.csproj` 里的 `PackageReference` 只控制编译时拉取；`RitsuLibModTemplate.json` 的 `dependencies` 是游戏加载器在运行时校验的。模板会在构建时把 `STS2-RitsuLib` 依赖版本同步为实际解析到的 NuGet 版本，但 `min_game_version` 仍需人工确认。**
 
-如果编译时用了新版 RitsuLib 却忘了同步 manifest，玩家装了旧版 RitsuLib 仍能通过 manifest 校验、运行时却会因 API 缺失或签名变化崩掉；反过来 manifest 写得过新，会让本来能跑的玩家被错误拒绝。
+如果发布时 manifest 没有同步到编译使用的新版 RitsuLib，玩家装了旧版 RitsuLib 仍能通过 manifest 校验、运行时却会因 API 缺失或签名变化崩掉；反过来 manifest 写得过新，会让本来能跑的玩家被错误拒绝。
 
 每次发布前请：
 
-1. 确认 `dotnet restore` 实际拉到的 `STS2.RitsuLib` 版本（看 `obj/project.assets.json`，或 IDE 的 NuGet 视图）。
-2. 把该版本填入 `RitsuLibModTemplate.json` 的 `dependencies[STS2-RitsuLib].version`。
-3. 切换到兼容包（`Compat.0.104.0` / `Compat.0.103.2`）时，把 `min_game_version` 同步调到对应分支；`dependencies[].id` 保持 `STS2-RitsuLib`（兼容包对外暴露的 mod id 不变）。
-4. 如果 manifest 版本是作为"运行时下限"而不是编译版本（例如声明 `0.3.0+` 都可用），在发布说明里明确，并自己测过下限能跑通。
+1. 构建后确认 `RitsuLibModTemplate.json` 的 `dependencies[STS2-RitsuLib].version` 已同步为实际解析到的 `STS2.RitsuLib` 版本。
+2. 切换到兼容包（`Compat.0.104.0` / `Compat.0.103.2`）时，把 `min_game_version` 同步调到对应分支；`dependencies[].id` 保持 `STS2-RitsuLib`（兼容包对外暴露的 mod id 不变）。
+3. 如果 manifest 版本是作为"运行时下限"而不是编译版本（例如声明 `0.3.0+` 都可用），在发布说明里明确，并自己测过下限能跑通。
 
 ### 升级注意事项
 

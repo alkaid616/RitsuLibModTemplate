@@ -28,9 +28,9 @@
 
     <ItemGroup>
         <PackageReference Include="Krafs.Publicizer" Version="2.2.1" PrivateAssets="all"/>
-        <PackageReference Include="Nothing.STS2RitsuLib.ModAnalyzers" Version="*"/>
+        <PackageReference Include="Nothing.STS2RitsuLib.ModAnalyzers" Version="*" PrivateAssets="all"/>
         <!-- 主线 RitsuLib（STS2 0.105.0+），跟踪 NuGet 最新版本。兼容分支和 manifest 版本对齐规则见 README。 -->
-        <PackageReference Include="STS2.RitsuLib" Version="*"/>
+        <PackageReference Include="STS2.RitsuLib" Version="*" GeneratePathProperty="true"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -87,5 +87,37 @@
         <Error Condition="'$(GodotExe)' == '' or !Exists('$(GodotExe)')" Text="GodotExe is required for PCK export. Copy local.props.template to local.props and set GodotExe, or build with /p:RunPckExport=false."/>
         <MakeDir Directories="$(ModOutputDir)"/>
         <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Command="&quot;$(GodotExe)&quot; --headless --path &quot;$(MSBuildProjectDirectory)&quot; --export-pack &quot;$(GodotExportPreset)&quot; &quot;$(ModPckPath)&quot;" EnvironmentVariables="STS2_SKIP_PCK_EXPORT=1"/>
+    </Target>
+
+    <Target Name="SyncManifestDependencies" AfterTargets="Build" BeforeTargets="CopyMod"
+            Condition="'$(DesignTimeBuild)' != 'true' and '$(PkgSTS2_RitsuLib)' != ''">
+        <PropertyGroup>
+            <RitsuLibVersion>$([System.IO.Path]::GetFileName('$(PkgSTS2_RitsuLib)'))</RitsuLibVersion>
+            <ManifestFile>$(MSBuildProjectDirectory)\$(MSBuildProjectName).json</ManifestFile>
+        </PropertyGroup>
+        <PropertyGroup>
+            <_Json>$([System.IO.File]::ReadAllText('$(ManifestFile)'))</_Json>
+            <_VersionSearchPattern>(?s)&quot;id&quot;\s*:\s*&quot;STS2-RitsuLib&quot;.*?&quot;version&quot;\s*:\s*&quot;([^&quot;]+)&quot;</_VersionSearchPattern>
+            <_VersionExtractPattern>(?s).*?&quot;id&quot;\s*:\s*&quot;STS2-RitsuLib&quot;.*?&quot;version&quot;\s*:\s*&quot;([^&quot;]+)&quot;.*</_VersionExtractPattern>
+            <_HasRitsuLibVersion>$([System.Text.RegularExpressions.Regex]::IsMatch('$(_Json)', '$(_VersionSearchPattern)'))</_HasRitsuLibVersion>
+            <_CurrentRitsuLibVersion Condition="'$(_HasRitsuLibVersion)' == 'True'">$([System.Text.RegularExpressions.Regex]::Replace('$(_Json)', '$(_VersionExtractPattern)', '$1'))</_CurrentRitsuLibVersion>
+            <_ManifestNeedsUpdate>false</_ManifestNeedsUpdate>
+            <_ManifestNeedsUpdate Condition="'$(_CurrentRitsuLibVersion)' != '' and '$(_CurrentRitsuLibVersion)' != '$(RitsuLibVersion)'">true</_ManifestNeedsUpdate>
+        </PropertyGroup>
+        <Error Condition="'$(_HasRitsuLibVersion)' != 'True'"
+               Text="Could not find dependencies[STS2-RitsuLib].version in '$(ManifestFile)'."/>
+        <Message Importance="High" Condition="'$(_ManifestNeedsUpdate)' == 'true'"
+                 Text="Sync STS2-RitsuLib manifest dependency: $(_CurrentRitsuLibVersion) -> $(RitsuLibVersion)"/>
+        <Message Importance="Low" Condition="'$(_ManifestNeedsUpdate)' != 'true'"
+                 Text="STS2-RitsuLib manifest dependency already matches $(RitsuLibVersion)."/>
+        <PropertyGroup Condition="'$(_ManifestNeedsUpdate)' == 'true'">
+            <_Pattern>(?s)(&quot;STS2-RitsuLib&quot;.*?&quot;version&quot;\s*:\s*&quot;)[^&quot;]+(&quot;)</_Pattern>
+            <_Replacement>${1}$(RitsuLibVersion)${2}</_Replacement>
+            <_Updated>$([System.Text.RegularExpressions.Regex]::Replace('$(_Json)', '$(_Pattern)', '$(_Replacement)'))</_Updated>
+        </PropertyGroup>
+        <ItemGroup Condition="'$(_ManifestNeedsUpdate)' == 'true'">
+            <_Lines Include="$([System.Text.RegularExpressions.Regex]::Split('$(_Updated)', '\\r?\\n'))" />
+        </ItemGroup>
+        <WriteLinesToFile Condition="'$(_ManifestNeedsUpdate)' == 'true'" File="$(ManifestFile)" Lines="@(_Lines)" Overwrite="true" />
     </Target>
 </Project>

@@ -66,7 +66,7 @@ Set these values in `local.props` (the file is in `.gitignore`; do not commit it
 
 > ⚠️ **Important: align the manifest's RitsuLib version with the csproj before release**
 >
-> `dependencies[STS2-RitsuLib].version` in `RitsuLibModTemplate.json` **must exactly match** the `STS2.RitsuLib` version your `.csproj` actually compiles against. The two are independent and **never auto-synced** — mismatches let players pass the manifest check and crash at runtime, or get wrongly rejected when their RitsuLib would have worked. See [Pre-release checklist: version alignment](#pre-release-checklist-version-alignment) below for the step-by-step procedure.
+> `dependencies[STS2-RitsuLib].version` in `RitsuLibModTemplate.json` **must exactly match** the `STS2.RitsuLib` version your `.csproj` actually compiles against. The template build auto-syncs this dependency version; `min_game_version` and intentional lower runtime-floor declarations still need manual review. See [Pre-release checklist: version alignment](#pre-release-checklist-version-alignment) below for the step-by-step procedure.
 
 ### Current version snapshot (as of 2026-05-22)
 
@@ -93,7 +93,7 @@ The table summarizes the mainline STS2 target for each boundary RitsuLib release
 The template references mainline `STS2.RitsuLib` by default, tracking the latest NuGet version:
 
 ```xml
-<PackageReference Include="STS2.RitsuLib" Version="*" />
+<PackageReference Include="STS2.RitsuLib" Version="*" GeneratePathProperty="true" />
 ```
 
 **Only enable one RitsuLib package at a time.** If your code still targets an older branch, comment out the mainline and enable the matching compat package:
@@ -112,16 +112,15 @@ The template also references `Nothing.STS2RitsuLib.ModAnalyzers` — an AI-writt
 
 ### Pre-release checklist: version alignment
 
-> **`PackageReference` in `.csproj` only controls compile-time resolution; `dependencies` in `RitsuLibModTemplate.json` is what the game loader checks at runtime. The two are independent and never auto-synced.**
+> **`PackageReference` in `.csproj` only controls compile-time resolution; `dependencies` in `RitsuLibModTemplate.json` is what the game loader checks at runtime. The template syncs the `STS2-RitsuLib` dependency version to the resolved NuGet version during build, but `min_game_version` still needs manual review.**
 
-If you compile against a new RitsuLib but forget to bump the manifest, players with an old RitsuLib will pass the manifest check and crash at runtime due to missing APIs or signature drift. Conversely, an over-tight manifest will reject players who could otherwise run the mod.
+If the manifest is not synced to the newer RitsuLib version you compile against, players with an old RitsuLib will pass the manifest check and crash at runtime due to missing APIs or signature drift. Conversely, an over-tight manifest will reject players who could otherwise run the mod.
 
 Before every release:
 
-1. Confirm the actual `STS2.RitsuLib` version `dotnet restore` resolved (look in `obj/project.assets.json` or your IDE's NuGet view).
-2. Write that version into `dependencies[STS2-RitsuLib].version` in `RitsuLibModTemplate.json`.
-3. When you switch to a compatibility package (`Compat.0.104.0` / `Compat.0.103.2`), also adjust `min_game_version` to the matching branch. Keep `dependencies[].id` as `STS2-RitsuLib` (compatibility packages expose the same mod id to the loader).
-4. If you intentionally want the manifest version to act as a **runtime floor** (e.g. declaring "`0.3.0+` works"), document this in your release notes and verify the mod runs against the declared floor.
+1. After build, confirm `dependencies[STS2-RitsuLib].version` in `RitsuLibModTemplate.json` has been synced to the resolved `STS2.RitsuLib` version.
+2. When you switch to a compatibility package (`Compat.0.104.0` / `Compat.0.103.2`), also adjust `min_game_version` to the matching branch. Keep `dependencies[].id` as `STS2-RitsuLib` (compatibility packages expose the same mod id to the loader).
+3. If you intentionally want the manifest version to act as a **runtime floor** (e.g. declaring "`0.3.0+` works"), document this in your release notes and verify the mod runs against the declared floor.
 
 ### Upgrade notes
 
