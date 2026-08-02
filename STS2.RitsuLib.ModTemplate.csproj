@@ -3,7 +3,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <PackageType>Template</PackageType>
     <PackageId>STS2.RitsuLib.ModTemplate</PackageId>
-    <PackageVersion>1.0.6</PackageVersion>
+    <PackageVersion>1.0.7</PackageVersion>
     <Title>RitsuLib Mod Template</Title>
     <Authors>Nothing</Authors>
     <Description>A dotnet new template for creating Slay the Spire 2 mods built on RitsuLib.</Description>
