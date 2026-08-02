@@ -108,8 +108,6 @@ The template references mainline `STS2.RitsuLib` by default, tracking the latest
 
 Compatibility packages only select the matching game branch; they do not restore every old API. Some old mods still need code changes and recompilation.
 
-The template also references `Nothing.STS2RitsuLib.ModAnalyzers` — an AI-written helper analyzer that reports common manifest and resource configuration issues during development.
-
 ### Pre-release checklist: version alignment
 
 > **`PackageReference` in `.csproj` only controls compile-time resolution; `dependencies` in `RitsuLibModTemplate.json` is what the game loader checks at runtime. The template syncs the `STS2-RitsuLib` dependency version to the resolved NuGet version during build, but `min_game_version` still needs manual review.**

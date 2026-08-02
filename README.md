@@ -108,8 +108,6 @@ Copy-Item .\local.props.template .\local.props
 
 兼容包只是选择对应游戏分支，并不会恢复所有旧 API；部分老 Mod 仍然需要修改并重新编译。
 
-项目还引用 `Nothing.STS2RitsuLib.ModAnalyzers` —— 一个 AI 编写的辅助分析器，开发期会提示 RitsuLib Mod 模板中常见的 manifest 和资源配置问题。
-
 ### 发布前 checklist：版本对齐
 
 > **`.csproj` 里的 `PackageReference` 只控制编译时拉取；`RitsuLibModTemplate.json` 的 `dependencies` 是游戏加载器在运行时校验的。模板会在构建时把 `STS2-RitsuLib` 依赖版本同步为实际解析到的 NuGet 版本，但 `min_game_version` 仍需人工确认。**
